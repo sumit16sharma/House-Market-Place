@@ -22,7 +22,14 @@ const ListingItem = ({ listing, id, onDelete }) => {
           <p className='categoryListingName'>{listing.name}</p>
 
           <p className='categoryListingPrice'>
-            ${listing.offer ? listing.discountedPrice : listing.regularPrice}
+            $
+            {listing.offer
+              ? listing.discountedPrice
+                  .toString()
+                  .replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+              : listing.regularPrice
+                  .toString()
+                  .replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
             {listing.type === 'rent' && ' / Month'}
           </p>
 
