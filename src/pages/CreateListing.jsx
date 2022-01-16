@@ -6,6 +6,7 @@ import {
   uploadBytesResumable,
   getDownloadURL,
 } from 'firebase/storage';
+import { collection, serverTimestamp, addDoc } from 'firebase/firestore';
 import { db } from '../firebase.config';
 import Spinner from '../components/Spinner';
 import { useNavigate } from 'react-router-dom';
@@ -97,6 +98,7 @@ const CreateListing = () => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
     if (parseInt(discountedPrice) >= parseInt(regularPrice)) {
       setLoading(false);
@@ -188,7 +190,23 @@ const CreateListing = () => {
       return;
     });
 
+    const formDataCopy = {
+      ...formData,
+      imgUrls,
+      geolocation,
+      timestamp: serverTimestamp(),
+    };
+
+    formDataCopy.location = address;
+    delete formDataCopy.images;
+    delete formDataCopy.address;
+    !formDataCopy.offer && delete formDataCopy.discountedPrice;
+
+    const docRef = await addDoc(collection(db, 'listings'), formDataCopy);
+
     setLoading(false);
+    toast.success('Listing Added');
+    navigate(`/category/${formDataCopy.type}/${docRef.id}`);
   };
 
   if (loading) {
@@ -207,12 +225,12 @@ const CreateListing = () => {
           <div className='formButtons'>
             <button
               type='button'
-              className={type === 'sell' ? 'formButtonActive' : 'formButton'}
+              className={type === 'sale' ? 'formButtonActive' : 'formButton'}
               onClick={onMutate}
-              value='sell'
+              value='sale'
               id='type'
             >
-              Sell
+              Sale
             </button>
             <button
               type='button'
