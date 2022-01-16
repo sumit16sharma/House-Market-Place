@@ -1,7 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import {
+  getStorage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+} from 'firebase/storage';
+import { db } from '../firebase.config';
 import Spinner from '../components/Spinner';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { v4 as uuidv4 } from 'uuid';
 
 const CreateListing = () => {
   const [geolocationEnabled, setGeolocationEnabled] = useState(true);
@@ -86,9 +95,100 @@ const CreateListing = () => {
     }
   };
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    console.log(formData);
+
+    if (parseInt(discountedPrice) >= parseInt(regularPrice)) {
+      setLoading(false);
+      toast.error('Discounted price needs to be less than regular price');
+      return;
+    }
+
+    if (images.length > 6) {
+      setLoading(false);
+      toast.error('Max 6 Images');
+      return;
+    }
+
+    let geolocation = {};
+    let location;
+
+    if (geolocationEnabled) {
+      // GEOCODING API
+      // https://positionstack.com/dashboard
+
+      const response = await fetch(
+        `http://api.positionstack.com/v1/forward?access_key=${process.env.REACT_APP_GEOCODE_API_KEY}&query=${address}`
+      );
+
+      const data = await response.json();
+
+      geolocation.lat = data.data[0]?.latitude ?? 0;
+      geolocation.lng = data.data[0]?.longitude ?? 0;
+
+      location = data.data.length === 0 ? undefined : data.data[0].label;
+
+      if (location === undefined || location.includes('undefined')) {
+        setLoading(false);
+        toast.error('Please Enter Valid Address');
+        return;
+      }
+    } else {
+      geolocation.lat = latitude;
+      geolocation.lng = longitude;
+      location = address;
+    }
+
+    // Store Image in firebase
+    const storeImage = async (image) => {
+      return new Promise((resolve, reject) => {
+        const storage = getStorage();
+        const fileName = `${auth.currentUser.uid}-${image.name}-${uuidv4()}`;
+
+        const storageRef = ref(storage, 'images/' + fileName);
+
+        const uploadTask = uploadBytesResumable(storageRef, image);
+
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            const progress =
+              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            console.log('Upload is ' + progress + '% done');
+            switch (snapshot.state) {
+              case 'paused':
+                console.log('Upload is paused');
+                break;
+              case 'running':
+                console.log('Upload is running');
+                break;
+              default:
+                break;
+            }
+          },
+          (error) => {
+            reject(error);
+          },
+          () => {
+            // Handle successful uploads on complete
+            // For instance, get the download URL: https://firebasestorage.googleapis.com/...
+            getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+              resolve(downloadURL);
+            });
+          }
+        );
+      });
+    };
+
+    const imgUrls = await Promise.all(
+      [...images].map((image) => storeImage(image))
+    ).catch(() => {
+      setLoading(false);
+      toast.error('Images not Uploaded');
+      return;
+    });
+
+    setLoading(false);
   };
 
   if (loading) {
