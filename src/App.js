@@ -15,6 +15,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import PrivateRoute from './components/PrivateRoute';
 import Category from './pages/Category';
 import CreateListing from './pages/CreateListing';
+import Listing from './pages/Listing';
 
 const App = () => {
   return (
@@ -27,6 +28,10 @@ const App = () => {
           <Route path='/forgot-password' element={<ForgotPassword />} />
           <Route path='/offers' element={<Offers />} />
           <Route path='/category/:categoryName' element={<Category />} />
+          <Route
+            path='/category/:categoryName/:listingId'
+            element={<Listing />}
+          />
           <Route path='/create-listing' element={<CreateListing />} />
           <Route path='/profile' element={<PrivateRoute />}>
             <Route path='/profile' element={<Profile />} />
