@@ -58,7 +58,7 @@ const Category = () => {
     };
 
     fetchListing();
-  }, []);
+  }, [params.categoryName]);
 
   // Pagination / Load More
   const onFetchMoreListing = async () => {
