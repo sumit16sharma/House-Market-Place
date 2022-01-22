@@ -17,6 +17,7 @@ import Category from './pages/Category';
 import CreateListing from './pages/CreateListing';
 import Listing from './pages/Listing';
 import Contact from './pages/Contact';
+import EditListing from './pages/EditListing';
 
 const App = () => {
   return (
@@ -34,6 +35,7 @@ const App = () => {
             element={<Listing />}
           />
           <Route path='/create-listing' element={<CreateListing />} />
+          <Route path='/edit-listing/:listingId' element={<EditListing />} />
           <Route path='/profile' element={<PrivateRoute />}>
             <Route path='/profile' element={<Profile />} />
           </Route>
